@@ -11,7 +11,7 @@ import { ErrorsInterceptor } from './interceptors/errors.interceptor';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env'],
+      envFilePath: ['.env.local', '.env'],
       cache: true,
     }),
     FirebaseModule,

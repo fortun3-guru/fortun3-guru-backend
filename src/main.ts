@@ -29,6 +29,6 @@ const apiServer = express();
 createNestServer(apiServer);
 
 export const api = functions
-  .region('asia-southeast1')
+  .region('asia-east1')
   .runWith({ memory: '1GB', timeoutSeconds: 120 })
   .https.onRequest(apiServer);
