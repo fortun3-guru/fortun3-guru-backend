@@ -7,6 +7,7 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ErrorsInterceptor } from './interceptors/errors.interceptor';
 import { NFTModule } from './apis/nft/nft.module';
+import { WorldcoinModule } from './apis/worldcoin/worldcoin.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { NFTModule } from './apis/nft/nft.module';
     AuthModule,
     UserModule,
     NFTModule,
+    WorldcoinModule,
   ],
   controllers: [],
   providers: [
