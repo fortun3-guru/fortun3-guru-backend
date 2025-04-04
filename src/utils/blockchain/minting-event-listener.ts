@@ -4,15 +4,15 @@ import { ethers } from 'ethers';
 import { FirebaseService } from '../../firebase/firebase.service';
 import { BlockchainConfigType } from '../../config/blockchain.config';
 
-// ABI เฉพาะส่วนที่เกี่ยวข้องกับ event ConsultPaid
+// ABI เฉพาะส่วนที่เกี่ยวข้องกับ event MintingPaid
 const ABI_FRAGMENT = [
-  'event ConsultPaid(address indexed user, uint256 receiptId)',
+  'event MintingPaid(address indexed user, uint256 receiptId)',
   'function getCurrentReceiptId() view returns (uint256)',
 ];
 
 @Injectable()
-export class ContractEventListener implements OnModuleInit {
-  private readonly logger = new Logger(ContractEventListener.name);
+export class MintingEventListener implements OnModuleInit {
+  private readonly logger = new Logger(MintingEventListener.name);
   private providers: Map<string, ethers.providers.Provider> = new Map();
   private contracts: Map<string, ethers.Contract> = new Map();
 
@@ -80,14 +80,14 @@ export class ContractEventListener implements OnModuleInit {
     // เริ่มการฟัง event สำหรับทุก contract
     this.contracts.forEach((contract, networkName) => {
       this.logger.log(
-        `Starting to listen for ConsultPaid events on network: ${networkName}`,
+        `Starting to listen for MintingPaid events on network: ${networkName}`,
       );
 
       // 1. Listening to events
-      contract.on('ConsultPaid', async (user, receiptId, event) => {
+      contract.on('MintingPaid', async (user, receiptId, event) => {
         try {
           this.logger.log(
-            `ConsultPaid event detected on ${networkName}: User: ${user}, ReceiptId: ${receiptId.toString()}`,
+            `MintingPaid event detected on ${networkName}: User: ${user}, ReceiptId: ${receiptId.toString()}`,
           );
 
           // บันทึกข้อมูลลง Firestore
@@ -100,7 +100,7 @@ export class ContractEventListener implements OnModuleInit {
           );
         } catch (error) {
           this.logger.error(
-            `Error processing ConsultPaid event: ${error.message}`,
+            `Error processing MintingPaid event: ${error.message}`,
             error.stack,
           );
         }
@@ -116,11 +116,11 @@ export class ContractEventListener implements OnModuleInit {
     for (const [networkName, contract] of this.contracts.entries()) {
       try {
         this.logger.log(
-          `Querying historic ConsultPaid events on ${networkName} from block ${fromBlock} to ${toBlock}`,
+          `Querying historic MintingPaid events on ${networkName} from block ${fromBlock} to ${toBlock}`,
         );
 
         const events = await contract.queryFilter(
-          contract.filters.ConsultPaid(),
+          contract.filters.MintingPaid(),
           fromBlock,
           toBlock,
         );
@@ -159,7 +159,7 @@ export class ContractEventListener implements OnModuleInit {
     try {
       // ตรวจสอบว่ามีข้อมูลนี้แล้วหรือไม่
       const querySnapshot = await this.firebaseService.firestore
-        .collection('fortunes')
+        .collection('nfts')
         .where('walletAddress', '==', walletAddress)
         .where('receiptId', '==', receiptId.toString())
         .where('network', '==', networkName)
@@ -178,7 +178,7 @@ export class ContractEventListener implements OnModuleInit {
       const networkConfig = blockchainConfig?.networks[networkName];
 
       // บันทึกข้อมูลใหม่
-      await this.firebaseService.firestore.collection('fortunes').add({
+      await this.firebaseService.firestore.collection('nfts').add({
         walletAddress,
         receiptId: receiptId.toString(),
         used: false,
@@ -200,4 +200,4 @@ export class ContractEventListener implements OnModuleInit {
       );
     }
   }
-}
+} 
