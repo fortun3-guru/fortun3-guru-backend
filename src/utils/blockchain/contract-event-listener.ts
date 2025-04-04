@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
 import { FirebaseService } from '../../firebase/firebase.service';
+import { BlockchainConfigType, BlockchainNetworkConfig } from '../../config/blockchain.config';
 
 // ABI เฉพาะส่วนที่เกี่ยวข้องกับ event ConsultPaid
 const ABI_FRAGMENT = [
@@ -27,50 +28,35 @@ export class ContractEventListener implements OnModuleInit {
   }
 
   private async setupProviders() {
-    // อ่านค่า configuration สำหรับเครือข่ายต่างๆ
-    // สามารถรองรับหลาย chain ได้
-    const networks = this.configService.get<Record<string, string>>(
-      'BLOCKCHAIN_NETWORKS',
-    );
+    const blockchainConfig = this.configService.get<BlockchainConfigType>('blockchain');
 
-    if (!networks) {
+    if (!blockchainConfig || !blockchainConfig.networks) {
       this.logger.warn('No blockchain networks configured');
       return;
     }
 
     // สร้าง provider สำหรับแต่ละเครือข่าย
-    Object.entries(networks).forEach(([networkName, rpcUrl]) => {
-      this.providers.set(
-        networkName,
-        new ethers.providers.JsonRpcProvider(rpcUrl),
-      );
+    Object.entries(blockchainConfig.networks).forEach(([networkName, networkConfig]) => {
+      this.providers.set(networkName, new ethers.providers.JsonRpcProvider(networkConfig.rpcUrl));
       this.logger.log(`Provider set up for network: ${networkName}`);
     });
   }
 
   private async setupContracts() {
-    // อ่านค่า configuration สำหรับ contract addresses บนเครือข่ายต่างๆ
-    const contractAddresses =
-      this.configService.get<Record<string, string>>('CONTRACT_ADDRESSES');
+    const blockchainConfig = this.configService.get<BlockchainConfigType>('blockchain');
 
-    if (!contractAddresses) {
-      this.logger.warn('No contract addresses configured');
+    if (!blockchainConfig || !blockchainConfig.networks) {
+      this.logger.warn('No blockchain networks configured');
       return;
     }
 
     // สร้าง contract instance สำหรับแต่ละเครือข่าย
-    this.providers.forEach((provider, networkName) => {
-      const contractAddress = contractAddresses[networkName];
-      if (contractAddress) {
-        const contract = new ethers.Contract(
-          contractAddress,
-          ABI_FRAGMENT,
-          provider,
-        );
+    Object.entries(blockchainConfig.networks).forEach(([networkName, networkConfig]) => {
+      const provider = this.providers.get(networkName);
+      if (provider && networkConfig.contractAddress) {
+        const contract = new ethers.Contract(networkConfig.contractAddress, ABI_FRAGMENT, provider);
         this.contracts.set(networkName, contract);
-        this.logger.log(
-          `Contract set up for network: ${networkName} at address: ${contractAddress}`,
-        );
+        this.logger.log(`Contract set up for network: ${networkName} at address: ${networkConfig.contractAddress}`);
       }
     });
   }
@@ -78,55 +64,35 @@ export class ContractEventListener implements OnModuleInit {
   private startListening() {
     // เริ่มการฟัง event สำหรับทุก contract
     this.contracts.forEach((contract, networkName) => {
-      this.logger.log(
-        `Starting to listen for ConsultPaid events on network: ${networkName}`,
-      );
+      this.logger.log(`Starting to listen for ConsultPaid events on network: ${networkName}`);
 
       // 1. Listening to events
       contract.on('ConsultPaid', async (user, receiptId, event) => {
         try {
-          this.logger.log(
-            `ConsultPaid event detected on ${networkName}: User: ${user}, ReceiptId: ${receiptId.toString()}`,
-          );
+          this.logger.log(`ConsultPaid event detected on ${networkName}: User: ${user}, ReceiptId: ${receiptId.toString()}`);
 
           // บันทึกข้อมูลลง Firestore
-          await this.storeEventData(
-            user,
-            receiptId,
-            event.blockNumber,
-            event.transactionHash,
-            networkName,
-          );
+          await this.storeEventData(user, receiptId, event.blockNumber, event.transactionHash, networkName);
         } catch (error) {
-          this.logger.error(
-            `Error processing ConsultPaid event: ${error.message}`,
-            error.stack,
-          );
+          this.logger.error(`Error processing ConsultPaid event: ${error.message}`, error.stack);
         }
       });
     });
   }
 
   // 2. Query historic events
-  async queryHistoricEvents(
-    fromBlock: number,
-    toBlock: number | string = 'latest',
-  ) {
+  async queryHistoricEvents(fromBlock: number, toBlock: number | string = 'latest') {
     for (const [networkName, contract] of this.contracts.entries()) {
       try {
-        this.logger.log(
-          `Querying historic ConsultPaid events on ${networkName} from block ${fromBlock} to ${toBlock}`,
-        );
+        this.logger.log(`Querying historic ConsultPaid events on ${networkName} from block ${fromBlock} to ${toBlock}`);
 
         const events = await contract.queryFilter(
           contract.filters.ConsultPaid(),
           fromBlock,
-          toBlock,
+          toBlock
         );
 
-        this.logger.log(
-          `Found ${events.length} historic events on ${networkName}`,
-        );
+        this.logger.log(`Found ${events.length} historic events on ${networkName}`);
 
         // บันทึกข้อมูลทุก event ที่พบ
         for (const event of events) {
@@ -136,14 +102,11 @@ export class ContractEventListener implements OnModuleInit {
             receiptId,
             event.blockNumber,
             event.transactionHash,
-            networkName,
+            networkName
           );
         }
       } catch (error) {
-        this.logger.error(
-          `Error querying historic events on ${networkName}: ${error.message}`,
-          error.stack,
-        );
+        this.logger.error(`Error querying historic events on ${networkName}: ${error.message}`, error.stack);
       }
     }
   }
@@ -153,7 +116,7 @@ export class ContractEventListener implements OnModuleInit {
     receiptId: ethers.BigNumber,
     blockNumber: number,
     txHash: string,
-    networkName: string,
+    networkName: string
   ) {
     try {
       // ตรวจสอบว่ามีข้อมูลนี้แล้วหรือไม่
@@ -165,11 +128,13 @@ export class ContractEventListener implements OnModuleInit {
         .get();
 
       if (!querySnapshot.empty) {
-        this.logger.log(
-          `Event already recorded for wallet: ${walletAddress}, receiptId: ${receiptId.toString()}`,
-        );
+        this.logger.log(`Event already recorded for wallet: ${walletAddress}, receiptId: ${receiptId.toString()}`);
         return;
       }
+
+      // ข้อมูลเครือข่าย
+      const blockchainConfig = this.configService.get<BlockchainConfigType>('blockchain');
+      const networkConfig = blockchainConfig?.networks[networkName];
 
       // บันทึกข้อมูลใหม่
       await this.firebaseService.firestore.collection('fortunes').add({
@@ -179,17 +144,14 @@ export class ContractEventListener implements OnModuleInit {
         blockNumber,
         txHash,
         network: networkName,
-        createdAt: new Date(),
+        chainId: networkConfig?.chainId || 0,
+        blockExplorer: networkConfig?.blockExplorer || '',
+        createdAt: new Date()
       });
 
-      this.logger.log(
-        `Event data stored for wallet: ${walletAddress}, receiptId: ${receiptId.toString()}`,
-      );
+      this.logger.log(`Event data stored for wallet: ${walletAddress}, receiptId: ${receiptId.toString()}`);
     } catch (error) {
-      this.logger.error(
-        `Error storing event data: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Error storing event data: ${error.message}`, error.stack);
     }
   }
 }

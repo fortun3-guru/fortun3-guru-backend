@@ -9,6 +9,7 @@ import { ErrorsInterceptor } from './interceptors/errors.interceptor';
 import { NFTModule } from './apis/nft/nft.module';
 import { WorldcoinModule } from './apis/worldcoin/worldcoin.module';
 import { BlockchainModule } from './utils/blockchain/blockchain.module';
+import configs from './config';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BlockchainModule } from './utils/blockchain/blockchain.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
       cache: true,
+      load: configs,
     }),
     FirebaseModule,
     BlockchainModule,

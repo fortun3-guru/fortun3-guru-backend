@@ -42,9 +42,28 @@
 1. กำหนดค่า Blockchain Networks และ Contract Addresses ใน `.env.local` ไฟล์:
 
 ```
-BLOCKCHAIN_NETWORKS={"ethereum":"https://mainnet.infura.io/v3/YOUR_INFURA_KEY","bsc":"https://bsc-dataseed.binance.org"}
-CONTRACT_ADDRESSES={"ethereum":"0xYourContractAddress","bsc":"0xYourContractAddress"}
+# Ethereum Mainnet
+ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/your-infura-key
+ETHEREUM_CONTRACT_ADDRESS=0xYourContractAddress
+
+# BSC Mainnet
+BSC_RPC_URL=https://bsc-dataseed.binance.org
+BSC_CONTRACT_ADDRESS=0xYourContractAddress
+
+# Polygon Mainnet
+POLYGON_RPC_URL=https://polygon-rpc.com
+POLYGON_CONTRACT_ADDRESS=0xYourContractAddress
+
+# Sepolia Testnet
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/your-infura-key
+SEPOLIA_CONTRACT_ADDRESS=0xYourContractAddress
+
+# Base Testnet
+BASE_TESTNET_RPC_URL=https://goerli.base.org
+BASE_TESTNET_CONTRACT_ADDRESS=0xYourContractAddress
 ```
+
+ระบบจะใช้ NestJS ConfigService เพื่อจัดการค่า configuration ที่กำหนดไว้
 
 ### การใช้งาน API:
 
