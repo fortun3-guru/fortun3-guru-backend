@@ -3,13 +3,12 @@ import { UserService } from './user.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { FastifyRequest } from 'fastify';
 import { User } from './entities/user.entity';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('User')
 @ApiBearerAuth()
 @Controller('users')
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(AuthGuard)
 export class UserController {
   constructor(private userService: UserService) {}
 
