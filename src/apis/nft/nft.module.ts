@@ -10,4 +10,4 @@ import { IPFSService } from './ipfs.service';
   providers: [NFTService, IPFSService],
   exports: [NFTService, IPFSService],
 })
-export class NFTModule {} 
+export class NFTModule {}

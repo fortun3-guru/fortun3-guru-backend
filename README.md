@@ -26,6 +26,54 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Event Relayer สำหรับ Smart Contract
+
+ระบบนี้รวมถึง Event Relayer ที่ใช้สำหรับติดตาม event `ConsultPaid` จาก smart contract โดยใช้ ethers.js v5 และบันทึกข้อมูลไปยัง Firebase Firestore
+
+### ความสามารถหลัก:
+
+- **รองรับหลาย Blockchain (Multichain)**: สามารถเชื่อมต่อและติดตาม event จากหลายเครือข่าย blockchain พร้อมกัน
+- **ติดตาม Event แบบ Real-time**: ตรวจจับ event `ConsultPaid` ทันทีที่เกิดขึ้นบน blockchain
+- **ค้นหา Event ย้อนหลัง**: สามารถค้นหา event ที่เกิดขึ้นก่อนหน้าผ่าน API endpoint
+- **บันทึกข้อมูลอัตโนมัติ**: บันทึกข้อมูล event ลงใน Firestore collection ชื่อ `fortunes` โดยอัตโนมัติ
+
+### การตั้งค่า:
+
+1. กำหนดค่า Blockchain Networks และ Contract Addresses ใน `.env.local` ไฟล์:
+
+```
+BLOCKCHAIN_NETWORKS={"ethereum":"https://mainnet.infura.io/v3/YOUR_INFURA_KEY","bsc":"https://bsc-dataseed.binance.org"}
+CONTRACT_ADDRESSES={"ethereum":"0xYourContractAddress","bsc":"0xYourContractAddress"}
+```
+
+### การใช้งาน API:
+
+#### ค้นหา Event ย้อนหลัง:
+
+```
+POST /blockchain/query-events
+Body: {
+  "fromBlock": 1000000,
+  "toBlock": "latest"
+}
+```
+
+### โครงสร้างข้อมูลใน Firestore:
+
+ข้อมูล event จะถูกบันทึกในคอลเลกชั่น `fortunes` ด้วยโครงสร้างดังนี้:
+
+```
+{
+  "walletAddress": "0x...",       // ที่อยู่กระเป๋าที่จ่ายเงิน
+  "receiptId": "123",             // ID ใบเสร็จจาก event
+  "used": false,                  // สถานะการใช้งาน
+  "blockNumber": 1000000,         // หมายเลข block ที่เกิด event
+  "txHash": "0x...",              // hash ของธุรกรรม
+  "network": "ethereum",          // ชื่อเครือข่าย blockchain
+  "createdAt": Timestamp          // เวลาที่บันทึกข้อมูล
+}
+```
+
 ## Installation
 
 ```bash
