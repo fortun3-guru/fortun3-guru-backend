@@ -1,0 +1,5 @@
+## Library
+- etherjs version 5
+- multichain evm support
+- english comment
+- do not edit .env.local

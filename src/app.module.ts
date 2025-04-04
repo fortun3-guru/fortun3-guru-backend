@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { FirebaseModule } from './firebase/firebase.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ErrorsInterceptor } from './interceptors/errors.interceptor';
+import { NFTModule } from './apis/nft/nft.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ErrorsInterceptor } from './interceptors/errors.interceptor';
     FirebaseModule,
     AuthModule,
     UserModule,
+    NFTModule,
   ],
   controllers: [],
   providers: [
