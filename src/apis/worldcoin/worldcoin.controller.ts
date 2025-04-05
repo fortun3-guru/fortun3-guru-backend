@@ -3,6 +3,7 @@ import { WorldcoinService } from './worldcoin.service';
 import {
   MiniAppPaymentSuccessPayload,
   MiniAppWalletAuthSuccessPayload,
+  ISuccessResult,
 } from '@worldcoin/minikit-js/*';
 
 @Controller('worldcoin')
@@ -26,5 +27,16 @@ export class WorldcoinController {
     @Body() body: { payload: MiniAppPaymentSuccessPayload; nonce: string },
   ) {
     return this.worldcoinService.confirmPayment(body.payload, body.nonce);
+  }
+
+  @Post('verify-user')
+  async verifyUser(
+    @Body() body: { payload: ISuccessResult; action: string; signal?: string },
+  ) {
+    return this.worldcoinService.verifyUser(
+      body.payload,
+      body.action,
+      body.signal,
+    );
   }
 }

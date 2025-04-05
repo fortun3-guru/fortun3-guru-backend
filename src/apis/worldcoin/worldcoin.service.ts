@@ -1,8 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
+  verifyCloudProof,
   MiniAppWalletAuthSuccessPayload,
   verifySiweMessage,
   MiniAppPaymentSuccessPayload,
+  ISuccessResult,
+  IVerifyResponse,
 } from '@worldcoin/minikit-js';
 
 @Injectable()
@@ -35,6 +38,21 @@ export class WorldcoinService {
     );
     const transaction = await response.json();
     if (transaction.reference === nonce && transaction.status != 'failed') {
+      return { success: true };
+    } else {
+      return { success: false };
+    }
+  }
+
+  async verifyUser(payload: ISuccessResult, action: string, signal?: string) {
+    const app_id = process.env.WORLDCOIN_APP_ID as `app_${string}`;
+    const verifyRes = (await verifyCloudProof(
+      payload,
+      app_id,
+      action,
+      signal,
+    )) as IVerifyResponse;
+    if (verifyRes.success) {
       return { success: true };
     } else {
       return { success: false };
