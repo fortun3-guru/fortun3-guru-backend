@@ -153,7 +153,10 @@ export class FortuneService {
    * @param receiptId Receipt ID for the transaction
    * @returns Result of the NFT minting process
    */
-  async mintNFTFromConsult(consultId: string, receiptId: string): Promise<{
+  async mintNFTFromConsult(
+    consultId: string,
+    receiptId: string,
+  ): Promise<{
     success: boolean;
     txHash?: string;
     tokenId?: number;
@@ -189,21 +192,30 @@ export class FortuneService {
       };
 
       // 4. If tarot is not a URL but a path, we need to get the full URL
-      let imageUrl = consult.tarot;
-      if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('ipfs')) {
+      const imageUrl = consult.tarot;
+      if (
+        imageUrl &&
+        !imageUrl.startsWith('http') &&
+        !imageUrl.startsWith('ipfs')
+      ) {
         // Try to download the image
         try {
-          const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+          const imageResponse = await axios.get(imageUrl, {
+            responseType: 'arraybuffer',
+          });
           const imageBuffer = Buffer.from(imageResponse.data, 'binary');
 
           // Upload and update metadata with IPFS URL
-          const updatedMetadata = await this.nftService.uploadImageAndUpdateMetadata(
-            imageBuffer,
-            metadata
-          );
+          const updatedMetadata =
+            await this.nftService.uploadImageAndUpdateMetadata(
+              imageBuffer,
+              metadata,
+            );
           metadata.image = updatedMetadata.image;
         } catch (error) {
-          this.logger.warn(`Could not process image at ${imageUrl}. Using as is.`);
+          this.logger.warn(
+            `Could not process image at ${imageUrl}. Using as is.`,
+          );
         }
       }
 
@@ -225,19 +237,17 @@ export class FortuneService {
       );
 
       // 6. Store the mint result in Firebase
-      await this.firebaseService.firestore
-        .collection('nfts')
-        .add({
-          consultId,
-          receiptId,
-          tokenId: mintResult.tokenId,
-          txHash: mintResult.txHash,
-          contractAddress: mintResult.contractAddress,
-          metadataUri: mintResult.metadataUri,
-          createdAt: new Date(),
-          walletAddress: consult.walletAddress,
-          networkName: consult.networkName,
-        });
+      await this.firebaseService.firestore.collection('nfts').add({
+        consultId,
+        receiptId,
+        tokenId: mintResult.tokenId,
+        txHash: mintResult.txHash,
+        contractAddress: mintResult.contractAddress,
+        metadataUri: mintResult.metadataUri,
+        createdAt: new Date(),
+        walletAddress: consult.walletAddress,
+        networkName: consult.networkName,
+      });
 
       return {
         success: true,
@@ -263,7 +273,7 @@ export class FortuneService {
     let hash = 0;
     for (let i = 0; i < receiptId.length; i++) {
       const char = receiptId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash);
