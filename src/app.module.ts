@@ -9,6 +9,7 @@ import { ErrorsInterceptor } from './interceptors/errors.interceptor';
 import { NFTModule } from './apis/nft/nft.module';
 import { WorldcoinModule } from './apis/worldcoin/worldcoin.module';
 import { BlockchainModule } from './apis/blockchain/blockchain.module';
+import { FortuneModule } from './apis/fortune/fortune.module';
 import configs from './config';
 
 @Module({
@@ -21,6 +22,7 @@ import configs from './config';
     }),
     FirebaseModule,
     BlockchainModule,
+    FortuneModule,
     AuthModule,
     UserModule,
     NFTModule,
