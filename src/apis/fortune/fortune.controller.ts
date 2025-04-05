@@ -10,18 +10,59 @@ import {
   CallFortuneParams,
   FortuneResponse,
 } from './fortune.service';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiProperty,
+} from '@nestjs/swagger';
 
 class CallFortuneDto implements CallFortuneParams {
+  @ApiProperty({
+    description: 'Transaction hash from blockchain',
+    example: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
   txHash: string;
+
+  @ApiProperty({
+    description: 'User wallet address',
+    example: '0xabcdef1234567890abcdef1234567890abcdef12',
+  })
   walletAddress: string;
+
+  @ApiProperty({
+    description: 'Type of fortune consultation',
+    example: 'career',
+  })
   consult: string;
+
+  @ApiProperty({
+    description: 'Language for the fortune result',
+    example: 'en',
+  })
   lang: string;
+
+  @ApiProperty({
+    description: 'Receipt ID for the fortune telling session',
+    example: 'receipt-123456',
+  })
   receiptId: string;
 }
 
-interface FortuneResponseData {
+class FortuneResponseData {
+  @ApiProperty({
+    description: 'Indicates if the fortune telling operation was successful',
+    example: true,
+  })
   success: boolean;
+
+  @ApiProperty({
+    description: 'Array of fortune telling results',
+    type: 'array',
+    items: {
+      type: 'object',
+    },
+  })
   data: FortuneResponse[];
 }
 
@@ -37,6 +78,7 @@ export class FortuneController {
   @ApiResponse({
     status: 200,
     description: 'Returns fortune telling results',
+    type: FortuneResponseData,
   })
   async tellFortune(@Body() dto: CallFortuneDto): Promise<FortuneResponseData> {
     try {

@@ -33,7 +33,7 @@ export class FortuneService {
   ) {
     this.apiUrl = this.configService.get<string>(
       'FORTUNE_API_URL',
-      'https://n8n.fortun3.guru/webhook/call-fortune',
+      'https://n8n.fortun3.guru/webhook-test/call-fortune',
     );
     this.apiKey = this.configService.get<string>('FORTUNE_API_KEY', 'winner');
   }
