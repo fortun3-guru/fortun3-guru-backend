@@ -176,10 +176,7 @@ export class FortuneService {
         throw new NotFoundException(`Consult with ID ${consultId} not found`);
       }
 
-      // 2. Generate a token ID from the receipt ID (using hash for uniqueness)
-      const tokenId = this.generateTokenId(receiptId);
-
-      // 3. Create NFT metadata
+      // 2. Create NFT metadata
       const metadata: NFTMetadata = {
         name: consult.tarotName || 'Fortune NFT',
         description: consult.short || '',
@@ -192,7 +189,7 @@ export class FortuneService {
         ],
       };
 
-      // 4. If tarot is not a URL but a path, we need to get the full URL
+      // 3. If tarot is not a URL but a path, we need to get the full URL
       const imageUrl = consult.tarot;
       if (
         imageUrl &&
@@ -220,7 +217,7 @@ export class FortuneService {
         }
       }
 
-      // 5. Mint the NFT
+      // 4. Mint the NFT
       if (!consult.chainId) {
         throw new Error('Network name not specified in consult data');
       }
@@ -233,15 +230,15 @@ export class FortuneService {
         consult.chainId, // Chain ID from the consult
         this.privateKey,
         consult.walletAddress, // Receiver address
-        tokenId,
+        0, // ส่ง 0 เป็น placeholder เนื่องจาก contract จะสร้าง tokenId เอง
         metadata,
       );
 
-      // 6. Store the mint result in Firebase
+      // 5. Store the mint result in Firebase
       await this.firebaseService.firestore.collection('nfts').add({
         consultId,
         receiptId,
-        tokenId: mintResult.tokenId,
+        tokenId: mintResult.tokenId, // ใช้ tokenId ที่ได้จาก mintResult
         txHash: mintResult.txHash,
         contractAddress: mintResult.contractAddress,
         metadataUri: mintResult.metadataUri,
@@ -256,27 +253,35 @@ export class FortuneService {
       };
     } catch (error) {
       this.logger.error(`Error minting NFT: ${error.message}`, error.stack);
+
+      // จัดการกับข้อผิดพลาดเฉพาะแบบที่รู้จัก
+      let errorMessage = error.message;
+
+      // จัดการกับข้อผิดพลาด UNPREDICTABLE_GAS_LIMIT
+      if (
+        error.code === 'UNPREDICTABLE_GAS_LIMIT' ||
+        errorMessage.includes('UNPREDICTABLE_GAS_LIMIT')
+      ) {
+        errorMessage =
+          'ไม่สามารถประมาณค่า gas ได้ อาจเกิดจากสัญญาอัจฉริยะต้องการค่า gas สูงเกินไป หรือมีข้อจำกัดในสัญญา';
+        this.logger.error(
+          `Gas estimation error: ${JSON.stringify(error, null, 2)}`,
+        );
+      }
+
+      // จัดการกับข้อผิดพลาดจากการทำธุรกรรม
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        errorMessage = 'ยอดเงินในบัญชีไม่เพียงพอสำหรับค่าธรรมเนียมการทำธุรกรรม';
+      }
+
+      if (error.code === 'NONCE_EXPIRED') {
+        errorMessage = 'Nonce หมดอายุ โปรดลองใหม่อีกครั้ง';
+      }
+
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
-  }
-
-  /**
-   * Generates a unique token ID from a receipt ID
-   * @param receiptId The receipt ID
-   * @returns A number to use as token ID
-   */
-  private generateTokenId(receiptId: string): number {
-    // Create a deterministic but unique token ID from the receipt ID
-    // This is a simple hash function that converts a string to a positive integer
-    let hash = 0;
-    for (let i = 0; i < receiptId.length; i++) {
-      const char = receiptId.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
   }
 }

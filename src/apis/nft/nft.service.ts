@@ -6,8 +6,8 @@ import { BlockchainConfigType } from '../../config/blockchain.config';
 
 // ABI for ERC721 standard - minimal interface needed for minting
 const ERC721_ABI = [
-  'function mint(address to, uint256 tokenId) external',
-  'function safeMint(address to, uint256 tokenId, string memory uri) external',
+  'function mint(address to) external returns (uint256)',
+  'function safeMint(address to, string memory uri) external returns (uint256)',
   'function tokenURI(uint256 tokenId) external view returns (string memory)',
   'function ownerOf(uint256 tokenId) external view returns (address)',
 ];
@@ -125,29 +125,142 @@ export class NFTService {
     contractAddress: string;
     explorerUrl: string;
     metadataUri: string;
+    httpMetadataUri: string;
   }> {
     if (!this.chainConfigs[chainId]) {
       throw new Error(`Chain ${chainId} not supported`);
     }
 
+    // Validate receiver address
+    if (!ethers.utils.isAddress(receiverAddress)) {
+      throw new Error(`Invalid receiver address: ${receiverAddress}`);
+    }
+
     // สร้าง metadata URI
     const metadataUri = await this.createNFTMetadata(metadata);
+
+    // แปลง IPFS URI เป็น HTTP URL สำหรับใช้งานกับ Smart Contract
+    let httpMetadataUri = metadataUri;
+    if (metadataUri.startsWith('ipfs://')) {
+      const cid = metadataUri.replace('ipfs://', '');
+      httpMetadataUri = `https://peach-tiny-gopher-935.mypinata.cloud/ipfs/${cid}`;
+    }
+
+    console.log('httpMetadataUri', httpMetadataUri);
 
     // สร้าง contract instance
     const contract = this.getContract(chainId, privateKey);
     const chainConfig = this.chainConfigs[chainId];
 
-    // เรียก safeMint function
-    const tx = await contract.safeMint(receiverAddress, tokenId, metadataUri);
-    const receipt = await tx.wait();
+    const provider = this.getProvider(chainId);
+    const wallet = new ethers.Wallet(privateKey, provider);
 
-    return {
-      txHash: receipt.transactionHash,
-      tokenId,
-      contractAddress: chainConfig.nftContractAddress,
-      explorerUrl: `${chainConfig.explorerUrl}/tx/${receipt.transactionHash}`,
-      metadataUri,
-    };
+    try {
+      // เตรียมข้อมูลสำหรับการทำธุรกรรม
+      const nonce = await wallet.getTransactionCount();
+      const gasPrice = await provider.getGasPrice();
+
+      // เรียก safeMint function โดยกำหนดค่า gas limit เอง
+      // ไม่ส่ง tokenId เนื่องจาก contract กำหนดเอง (autoincrement)
+      const tx = await contract.safeMint(receiverAddress, httpMetadataUri, {
+        gasLimit: 500000, // กำหนดค่า gas limit เป็นค่าที่สูงพอสำหรับการ mint NFT
+        nonce: nonce,
+        gasPrice: gasPrice.mul(120).div(100), // เพิ่ม gas price อีก 20%
+      });
+      const receipt = await tx.wait();
+
+      // ดึง event logs เพื่อหา tokenId ที่ถูกสร้างขึ้น
+      let mintedTokenId = tokenId; // ใช้ค่าเดิมเป็นค่า default
+
+      // ตรวจสอบ event logs ถ้ามี Transfer event (ERC721 standard)
+      for (const log of receipt.logs) {
+        try {
+          const parsedLog = contract.interface.parseLog(log);
+          if (
+            parsedLog.name === 'Transfer' &&
+            parsedLog.args.to.toLowerCase() === receiverAddress.toLowerCase()
+          ) {
+            mintedTokenId = parsedLog.args.tokenId.toNumber();
+            break;
+          }
+        } catch (error) {
+          // ข้าม log ที่ไม่สามารถ parse ได้
+          continue;
+        }
+      }
+
+      return {
+        txHash: receipt.transactionHash,
+        tokenId: mintedTokenId,
+        contractAddress: chainConfig.nftContractAddress,
+        explorerUrl: `${chainConfig.explorerUrl}/tx/${receipt.transactionHash}`,
+        metadataUri,
+        httpMetadataUri,
+      };
+    } catch (error) {
+      // กรณีที่ยังมีปัญหาเรื่อง gas limit
+      if (error.code === 'UNPREDICTABLE_GAS_LIMIT') {
+        try {
+          // ลองใช้วิธีการส่งธุรกรรมโดยตรง
+          const data = contract.interface.encodeFunctionData('safeMint', [
+            receiverAddress,
+            httpMetadataUri,
+          ]);
+
+          const nonce = await wallet.getTransactionCount();
+          const gasPrice = await provider.getGasPrice();
+
+          // สร้าง transaction แบบกำหนดค่าทุกอย่างเอง
+          const tx = await wallet.sendTransaction({
+            to: chainConfig.nftContractAddress,
+            data: data,
+            gasLimit: 1000000, // กำหนดค่า gas limit สูงขึ้น
+            nonce: nonce,
+            gasPrice: gasPrice.mul(150).div(100), // เพิ่ม gas price อีก 50% เพื่อให้แน่ใจว่าธุรกรรมจะสำเร็จ
+          });
+
+          const receipt = await tx.wait();
+
+          // ดึง event logs เพื่อหา tokenId ที่ถูกสร้างขึ้น
+          let mintedTokenId = tokenId; // ใช้ค่าเดิมเป็นค่า default
+
+          // ตรวจสอบ event logs ถ้ามี Transfer event (ERC721 standard)
+          for (const log of receipt.logs) {
+            try {
+              const parsedLog = contract.interface.parseLog(log);
+              if (
+                parsedLog.name === 'Transfer' &&
+                parsedLog.args.to.toLowerCase() ===
+                receiverAddress.toLowerCase()
+              ) {
+                mintedTokenId = parsedLog.args.tokenId.toNumber();
+                break;
+              }
+            } catch (error) {
+              // ข้าม log ที่ไม่สามารถ parse ได้
+              continue;
+            }
+          }
+
+          return {
+            txHash: receipt.transactionHash,
+            tokenId: mintedTokenId,
+            contractAddress: chainConfig.nftContractAddress,
+            explorerUrl: `${chainConfig.explorerUrl}/tx/${receipt.transactionHash}`,
+            metadataUri,
+            httpMetadataUri,
+          };
+        } catch (innerError) {
+          // ถ้ายังมีปัญหาอีก ให้โยนข้อผิดพลาดพร้อมรายละเอียดที่ชัดเจน
+          throw new Error(
+            `Failed to mint NFT: ${innerError.message || innerError}`,
+          );
+        }
+      }
+
+      // หากไม่ใช่ปัญหาเรื่อง gas limit ให้โยนข้อผิดพลาดต่อไป
+      throw error;
+    }
   }
 
   /**
