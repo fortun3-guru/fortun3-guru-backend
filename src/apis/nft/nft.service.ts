@@ -18,6 +18,7 @@ export interface ChainConfig {
   chainId: number;
   rpcUrl: string;
   contractAddress: string;
+  nftContractAddress: string;
   explorerUrl: string;
 }
 
@@ -53,6 +54,7 @@ export class NFTService {
             chainId: network.chainId,
             rpcUrl: network.rpcUrl,
             contractAddress: network.contractAddress,
+            nftContractAddress: network.nftContractAddress,
             explorerUrl: network.blockExplorer,
           };
         },
@@ -105,7 +107,7 @@ export class NFTService {
     const chainConfig = this.chainConfigs[chainId];
 
     const wallet = new ethers.Wallet(privateKey, provider);
-    return new ethers.Contract(chainConfig.contractAddress, ERC721_ABI, wallet);
+    return new ethers.Contract(chainConfig.nftContractAddress, ERC721_ABI, wallet);
   }
 
   /**
@@ -142,7 +144,7 @@ export class NFTService {
     return {
       txHash: receipt.transactionHash,
       tokenId,
-      contractAddress: chainConfig.contractAddress,
+      contractAddress: chainConfig.nftContractAddress,
       explorerUrl: `${chainConfig.explorerUrl}/tx/${receipt.transactionHash}`,
       metadataUri,
     };

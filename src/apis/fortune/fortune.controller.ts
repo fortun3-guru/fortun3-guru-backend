@@ -25,7 +25,8 @@ import {
 class CallFortuneDto implements CallFortuneParams {
   @ApiProperty({
     description: 'Transaction hash from blockchain',
-    example: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
   })
   txHash: string;
 
@@ -90,14 +91,81 @@ class ConsultResponseData {
       long: 'ในอนาคตอันใกล้นี้ คุณจะได้พบกับโอกาสทางอาชีพที่น่าสนใจ อาจเป็นการเลื่อนตำแหน่ง หรือข้อเสนองานใหม่ที่ดีกว่าเดิม...',
       sound: 'https://storage.example.com/sounds/career_reading_01.mp3',
       tarot: 'The Star',
-      txHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      txHash:
+        '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
       walletAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
       raw: { additionalData: 'Raw data from fortune reading' },
       createdAt: '2023-06-01T00:00:00.000Z',
       updatedAt: '2023-06-01T00:00:00.000Z',
-    }
+    },
   })
   data: ConsultResponse;
+}
+
+class MintNFTDto {
+  @ApiProperty({
+    description: 'ID of the consult document in Firebase',
+    example: 'consult-123',
+  })
+  consultId: string;
+
+  @ApiProperty({
+    description: 'Receipt ID for the transaction',
+    example: 'receipt-456',
+  })
+  receiptId: string;
+}
+
+class MintNFTResponseData {
+  @ApiProperty({
+    description: 'Indicates if the operation was successful',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Transaction hash of the minting transaction',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    required: false,
+  })
+  txHash?: string;
+
+  @ApiProperty({
+    description: 'Token ID of the minted NFT',
+    example: 123456,
+    required: false,
+  })
+  tokenId?: number;
+
+  @ApiProperty({
+    description: 'Contract address of the NFT',
+    example: '0xabcdef1234567890abcdef1234567890abcdef12',
+    required: false,
+  })
+  contractAddress?: string;
+
+  @ApiProperty({
+    description: 'URL to view the transaction on the block explorer',
+    example:
+      'https://explorer.example.com/tx/0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    required: false,
+  })
+  explorerUrl?: string;
+
+  @ApiProperty({
+    description: 'URI of the NFT metadata on IPFS',
+    example: 'ipfs://bafybeih1234567890abcdef1234567890abcdef',
+    required: false,
+  })
+  metadataUri?: string;
+
+  @ApiProperty({
+    description: 'Error message if the operation failed',
+    example: 'Network name not specified in consult data',
+    required: false,
+  })
+  error?: string;
 }
 
 @ApiTags('fortune')
@@ -178,6 +246,43 @@ export class FortuneController {
         error.stack,
       );
       throw new BadRequestException(`Error fetching consult with ID: ${id}`);
+    }
+  }
+
+  @Post('mint-nft')
+  @ApiOperation({ summary: 'Mint an NFT from a consult' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the result of the NFT minting operation',
+    type: MintNFTResponseData,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error minting the NFT',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Consult not found',
+  })
+  async mintNFT(@Body() dto: MintNFTDto): Promise<MintNFTResponseData> {
+    try {
+      this.logger.log(
+        `Minting NFT for consult: ${dto.consultId}, receipt: ${dto.receiptId}`,
+      );
+
+      const result = await this.fortuneService.mintNFTFromConsult(
+        dto.consultId,
+        dto.receiptId,
+      );
+
+      return result;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Error minting NFT: ${error.message}`, error.stack);
+      throw new BadRequestException(`Error minting NFT: ${error.message}`);
     }
   }
 }

@@ -3,6 +3,7 @@ import { registerAs } from '@nestjs/config';
 export interface BlockchainNetworkConfig {
   rpcUrl: string;
   contractAddress: string;
+  nftContractAddress: string;
   chainId: number;
   name: string;
   symbol: string;
@@ -23,6 +24,9 @@ export default registerAs('blockchain', (): BlockchainConfigType => {
       contractAddress:
         process.env.ETHEREUM_CONTRACT_ADDRESS ||
         '0x0000000000000000000000000000000000000000',
+      nftContractAddress:
+        process.env.ETHEREUM_NFT_CONTRACT_ADDRESS ||
+        '0x0000000000000000000000000000000000000000',
       chainId: 1,
       name: 'Ethereum Mainnet',
       symbol: 'ETH',
@@ -33,6 +37,9 @@ export default registerAs('blockchain', (): BlockchainConfigType => {
       contractAddress:
         process.env.BSC_CONTRACT_ADDRESS ||
         '0x0000000000000000000000000000000000000000',
+      nftContractAddress:
+        process.env.BSC_NFT_CONTRACT_ADDRESS ||
+        '0x0000000000000000000000000000000000000000',
       chainId: 56,
       name: 'Binance Smart Chain',
       symbol: 'BNB',
@@ -42,6 +49,9 @@ export default registerAs('blockchain', (): BlockchainConfigType => {
       rpcUrl: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
       contractAddress:
         process.env.POLYGON_CONTRACT_ADDRESS ||
+        '0x0000000000000000000000000000000000000000',
+      nftContractAddress:
+        process.env.POLYGON_NFT_CONTRACT_ADDRESS ||
         '0x0000000000000000000000000000000000000000',
       chainId: 137,
       name: 'Polygon Mainnet',
@@ -55,6 +65,9 @@ export default registerAs('blockchain', (): BlockchainConfigType => {
       contractAddress:
         process.env.SEPOLIA_CONTRACT_ADDRESS ||
         '0x0000000000000000000000000000000000000000',
+      nftContractAddress:
+        process.env.SEPOLIA_NFT_CONTRACT_ADDRESS ||
+        '0x0000000000000000000000000000000000000000',
       chainId: 11155111,
       name: 'Sepolia Testnet',
       symbol: 'ETH',
@@ -64,6 +77,9 @@ export default registerAs('blockchain', (): BlockchainConfigType => {
       rpcUrl: process.env.BASE_TESTNET_RPC_URL || 'https://goerli.base.org',
       contractAddress:
         process.env.BASE_TESTNET_CONTRACT_ADDRESS ||
+        '0x0000000000000000000000000000000000000000',
+      nftContractAddress:
+        process.env.BASE_TESTNET_NFT_CONTRACT_ADDRESS ||
         '0x0000000000000000000000000000000000000000',
       chainId: 84531,
       name: 'Base Goerli Testnet',
