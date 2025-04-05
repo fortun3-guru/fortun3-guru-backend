@@ -32,7 +32,7 @@ export class WebhookController {
   ): Promise<WebhookResponseDto> {
     try {
       this.logger.log(
-        `Received Nordit webhook for chain: ${chain}`,
+        `Received Nordit webhook for chain: ${chain}, protocol: ${payload.protocol}, network: ${payload.network}`,
       );
 
       return await this.webhookService.processNorditWebhook(chain, payload);
@@ -46,4 +46,4 @@ export class WebhookController {
       );
     }
   }
-} 
+}

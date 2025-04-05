@@ -8,9 +8,10 @@ import { NordicApiController } from './nordic-api.controller';
 import { WebhookService } from './webhook.service';
 import { WebhookController } from './webhook.controller';
 import { FirebaseModule } from 'src/firebase/firebase.module';
+import { BlockchainModule } from '../blockchain/blockchain.module';
 
 @Module({
-  imports: [ConfigModule, FirebaseModule],
+  imports: [ConfigModule, FirebaseModule, BlockchainModule],
   controllers: [NFTController, NordicApiController, WebhookController],
   providers: [NFTService, IPFSService, NordicApiService, WebhookService],
   exports: [NFTService, IPFSService, NordicApiService, WebhookService],

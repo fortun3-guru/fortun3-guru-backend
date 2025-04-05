@@ -45,15 +45,18 @@ export class WorldcoinService {
   }
 
   async verifyUser(payload: ISuccessResult, action: string, signal?: string) {
+    console.log(payload);
     const app_id = process.env.WORLDCOIN_APP_ID as `app_${string}`;
+    console.log(app_id)
     const verifyRes = (await verifyCloudProof(
       payload,
       app_id,
       action,
       signal,
     )) as IVerifyResponse;
+    console.log(verifyRes)
     if (verifyRes.success) {
-      return { success: true };
+      return { success: true, result: verifyRes };
     } else {
       return { success: false };
     }

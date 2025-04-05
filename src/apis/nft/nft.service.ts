@@ -95,8 +95,15 @@ export class NFTService {
     if (!chainConfig) {
       throw new Error(`Chain ${chainId} not supported`);
     }
-
-    return new ethers.providers.JsonRpcProvider(chainConfig.rpcUrl);
+    console.log('chainConfig', chainConfig);
+    console.log('chainConfig.rpcUrl', chainConfig.rpcUrl);
+    if (chainConfig.rpcUrl && chainConfig.rpcUrl.startsWith('http')) {
+      return new ethers.providers.JsonRpcProvider(chainConfig.rpcUrl);
+    } else if (chainConfig.rpcUrl && chainConfig.rpcUrl.startsWith('ws')) {
+      return new ethers.providers.WebSocketProvider(chainConfig.rpcUrl);
+    } else {
+      throw new Error(`Invalid RPC URL for chain ${chainId}`);
+    }
   }
 
   /**
@@ -107,7 +114,11 @@ export class NFTService {
     const chainConfig = this.chainConfigs[chainId];
 
     const wallet = new ethers.Wallet(privateKey, provider);
-    return new ethers.Contract(chainConfig.nftContractAddress, ERC721_ABI, wallet);
+    return new ethers.Contract(
+      chainConfig.nftContractAddress,
+      ERC721_ABI,
+      wallet,
+    );
   }
 
   /**
@@ -127,6 +138,14 @@ export class NFTService {
     metadataUri: string;
     httpMetadataUri: string;
   }> {
+    console.log(
+      'mintNFT',
+      chainId,
+      privateKey,
+      receiverAddress,
+      tokenId,
+      metadata,
+    );
     if (!this.chainConfigs[chainId]) {
       throw new Error(`Chain ${chainId} not supported`);
     }
@@ -153,8 +172,9 @@ export class NFTService {
     const chainConfig = this.chainConfigs[chainId];
 
     const provider = this.getProvider(chainId);
+    // console.log('provider', provider);
     const wallet = new ethers.Wallet(privateKey, provider);
-
+    // console.log('wallet', wallet);
     try {
       // เตรียมข้อมูลสำหรับการทำธุรกรรม
       const nonce = await wallet.getTransactionCount();
