@@ -92,6 +92,43 @@ Body: {
 }
 ```
 
+#### ตรวจสอบข้อมูล MintingPaid โดย blockNumber หรือ txHash:
+
+```
+GET /blockchain/check-minting?blockNumber=1000000&txHash=0x123...&walletAddress=0x456...
+```
+
+สามารถส่ง parameter ได้ดังนี้:
+
+- **blockNumber**: หมายเลข block ที่ต้องการตรวจสอบ
+- **txHash**: transaction hash ที่ต้องการตรวจสอบ
+- **walletAddress**: ที่อยู่กระเป๋าเงินที่ต้องการตรวจสอบ
+
+สามารถส่งเพียง parameter ใดก็ได้ หรือส่งหลาย parameter พร้อมกันเพื่อกรองข้อมูล
+
+ตัวอย่างผลลัพธ์:
+
+```json
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "id": "documentId",
+      "walletAddress": "0x...",
+      "receiptId": "123",
+      "used": false,
+      "blockNumber": 1000000,
+      "txHash": "0x...",
+      "network": "ethereum",
+      "chainId": 1,
+      "blockExplorer": "https://etherscan.io",
+      "createdAt": "2023-04-05T08:30:00.000Z"
+    }
+  ]
+}
+```
+
 ### โครงสร้างข้อมูลใน Firestore:
 
 #### Collection: fortunes (ConsultPaid Events)
