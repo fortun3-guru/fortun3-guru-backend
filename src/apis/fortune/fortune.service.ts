@@ -5,6 +5,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { NFTService, NFTMetadata } from 'src/apis/nft/nft.service';
+import { NordicApiService } from 'src/apis/nft/nordic-api.service';
 import axios from 'axios';
 
 export interface CallFortuneParams {
@@ -49,12 +50,14 @@ export class FortuneService {
   private readonly apiUrl: string;
   private readonly apiKey: string;
   private readonly privateKey: string;
+  private readonly blockchainNetworks: any;
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly firebaseService: FirebaseService,
     private readonly nftService: NFTService,
+    private readonly nordicApiService: NordicApiService,
   ) {
     this.apiUrl = this.configService.get<string>(
       'FORTUNE_API_URL',
@@ -62,6 +65,7 @@ export class FortuneService {
     );
     this.apiKey = this.configService.get<string>('FORTUNE_API_KEY', 'winner');
     this.privateKey = this.configService.get<string>('NFT_MINTER_PRIVATE_KEY');
+    this.blockchainNetworks = this.configService.get('blockchain.networks');
   }
 
   /**
@@ -246,6 +250,42 @@ export class FortuneService {
         walletAddress: consult.walletAddress,
         chainId: consult.chainId,
       });
+
+      // 6. Check if the chain has norditSupport and sync NFT metadata
+      try {
+        // Find the chainKey for the given chainId
+        const chainKey = Object.keys(this.blockchainNetworks).find(
+          (key) =>
+            this.blockchainNetworks[key].chainId.toString() === consult.chainId,
+        );
+
+        if (chainKey && this.blockchainNetworks[chainKey].norditSupport) {
+          this.logger.log(
+            `Chain ${chainKey} (ID: ${consult.chainId}) has norditSupport. Syncing NFT metadata...`,
+          );
+
+          // Call syncNFTMetadata from NordicApiService
+          await this.nordicApiService.syncNFTMetadata(
+            chainKey,
+            mintResult.contractAddress,
+            mintResult.tokenId.toString(),
+          );
+
+          this.logger.log(
+            `NFT metadata sync initiated for token ${mintResult.tokenId}`,
+          );
+        } else {
+          this.logger.log(
+            `Chain with ID ${consult.chainId} either not found or doesn't have norditSupport. Skipping metadata sync.`,
+          );
+        }
+      } catch (syncError) {
+        // If sync fails, log the error but don't fail the whole operation
+        this.logger.error(
+          `Error syncing NFT metadata: ${syncError.message}`,
+          syncError.stack,
+        );
+      }
 
       return {
         success: true,

@@ -254,16 +254,12 @@ export class NordicApiService {
       // Construct the correct URL format as per Nodit API
       const apiUrl = `${this.nordicApiUrl}/v1/${protocol}/${network}/nft/syncNftMetadata`;
 
-      this.logger.log(
-        `Syncing NFT metadata with API URL: ${apiUrl}`,
-      );
+      this.logger.log(`Syncing NFT metadata with API URL: ${apiUrl}`);
 
       const response = await axios.post(
         apiUrl,
         {
-          tokens: [
-            { contractAddress, tokenId },
-          ],
+          tokens: [{ contractAddress, tokenId }],
         },
         {
           headers: {
@@ -397,6 +393,116 @@ export class NordicApiService {
     } catch (error) {
       this.logger.error(
         `Error fetching NFTs for contract ${contractAddress} on chain ${chainKey}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get token balances for a wallet address on a specific chain
+   * @param chainKey The chain key to search on
+   * @param walletAddress The wallet address to fetch token balances for
+   * @param withCount Whether to include token count in the response
+   * @returns Object containing token balance data
+   */
+  async getTokenBalances(
+    chainKey: string,
+    walletAddress: string,
+    withCount = false,
+  ): Promise<any> {
+    try {
+      this.logger.log(
+        `Fetching token balances for wallet: ${walletAddress} on chain: ${chainKey}`,
+      );
+
+      // Check if the chain is supported
+      if (!this.supportedChains[chainKey]) {
+        const supportedChains = Object.keys(this.supportedChains).join(', ');
+        throw new Error(
+          `Chain ${chainKey} is not supported. Supported chains are: ${supportedChains}`,
+        );
+      }
+
+      const chainConfig = this.supportedChains[chainKey];
+
+      // Always use the supported tokens from config
+      const contractAddresses = chainConfig.supportedTokens;
+      console.log(contractAddresses);
+      // Call the Nodit API to get token balances
+      const result = await this.fetchTokenBalancesForChain(
+        walletAddress,
+        chainConfig,
+        chainKey,
+        {
+          withCount,
+          contractAddresses,
+        },
+      );
+      console.log(result);
+      return {
+        success: true,
+        accountAddress: walletAddress,
+        chainId: chainConfig.chainId,
+        networkName: chainConfig.name,
+        count: result.count,
+        tokens: result.tokens,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error in getTokenBalances: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Helper method to fetch token balances for a wallet on a specific chain
+   * @private
+   */
+  private async fetchTokenBalancesForChain(
+    walletAddress: string,
+    chainConfig: BlockchainNetworkConfig,
+    chainKey: string,
+    options: {
+      withCount: boolean;
+      contractAddresses: string[];
+    },
+  ): Promise<any> {
+    try {
+      const protocol = chainConfig.protocol;
+      const network = chainConfig.network;
+
+      // Construct the correct URL format as per Nodit API
+      const apiUrl = `${this.nordicApiUrl}/v1/${protocol}/${network}/token/getTokensOwnedByAccount`;
+      console.log(apiUrl);
+      this.logger.log(`Fetching token balances with API URL: ${apiUrl}`);
+
+      const response = await axios.post(
+        apiUrl,
+        {
+          accountAddress: walletAddress,
+          withCount: options.withCount,
+          contractAddresses: options.contractAddresses,
+        },
+        {
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            'X-API-KEY': this.nordicApiKey,
+          },
+        },
+      );
+
+      console.log(response.data);
+
+      return {
+        tokens: response.data.items || [],
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error fetching token balances for wallet ${walletAddress} on chain ${chainKey}: ${error.message}`,
         error.stack,
       );
       throw error;

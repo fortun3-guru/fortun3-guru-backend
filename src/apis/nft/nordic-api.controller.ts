@@ -6,6 +6,7 @@ import {
   Param,
   Logger,
   BadRequestException,
+  Body,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { NordicApiService } from './nordic-api.service';
@@ -15,9 +16,13 @@ import {
   NFTResponseDto,
   SyncNFTMetadataResponseDto,
 } from './dto/nordic-api.dto';
+import {
+  GetTokenBalanceDto,
+  TokenBalanceResponseDto,
+} from './dto/token-balance.dto';
 
-@ApiTags('nordic-nft')
-@Controller('nordic-nft')
+@ApiTags('nordit-nft')
+@Controller('nordit-nft')
 export class NordicApiController {
   private readonly logger = new Logger(NordicApiController.name);
 
@@ -154,7 +159,43 @@ export class NordicApiController {
         `Error syncing NFT metadata for token ${contractAddress}/${tokenId} on chain ${chain}: ${error.message}`,
         error.stack,
       );
-      throw new BadRequestException(`Error syncing NFT metadata: ${error.message}`);
+      throw new BadRequestException(
+        `Error syncing NFT metadata: ${error.message}`,
+      );
+    }
+  }
+
+  @Post('tokens/:chain')
+  @ApiOperation({
+    summary: 'Get token balances for a wallet address on a specific chain',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns token balance data for the specified wallet and chain',
+    type: TokenBalanceResponseDto,
+  })
+  async getTokenBalances(
+    @Param('chain') chain: string,
+    @Body() dto: GetTokenBalanceDto,
+  ): Promise<TokenBalanceResponseDto> {
+    try {
+      this.logger.log(
+        `Fetching token balances for wallet: ${dto.accountAddress} on chain: ${chain}`,
+      );
+
+      return await this.nordicApiService.getTokenBalances(
+        chain,
+        dto.accountAddress,
+        dto.withCount || false,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error fetching token balances for wallet ${dto.accountAddress} on chain ${chain}: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        `Error fetching token balances: ${error.message}`,
+      );
     }
   }
 }
