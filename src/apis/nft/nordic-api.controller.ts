@@ -21,8 +21,8 @@ import {
   TokenBalanceResponseDto,
 } from './dto/token-balance.dto';
 
-@ApiTags('nordit-nft')
-@Controller('nordit-nft')
+@ApiTags('nordit')
+@Controller('nordit')
 export class NordicApiController {
   private readonly logger = new Logger(NordicApiController.name);
 
