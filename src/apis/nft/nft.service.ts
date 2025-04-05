@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
 import { IPFSService } from './ipfs.service';
+import { BlockchainConfigType } from '../../config/blockchain.config';
 
 // ABI for ERC721 standard - minimal interface needed for minting
 const ERC721_ABI = [
@@ -38,28 +39,25 @@ export class NFTService {
     private configService: ConfigService,
     private ipfsService: IPFSService,
   ) {
-    // Initialize supported chains from environment variables
-    this.chainConfigs = {
-      sepolia: {
-        name: 'Sepolia',
-        chainId: 11155111,
-        rpcUrl: this.configService.get<string>('SEPOLIA_RPC_URL'),
-        contractAddress: this.configService.get<string>(
-          'SEPOLIA_NFT_CONTRACT_ADDRESS',
-        ),
-        explorerUrl: 'https://sepolia.etherscan.io',
-      },
-      baseTestnet: {
-        name: 'Base Testnet',
-        chainId: 84531,
-        rpcUrl: this.configService.get<string>('BASE_TESTNET_RPC_URL'),
-        contractAddress: this.configService.get<string>(
-          'BASE_TESTNET_NFT_CONTRACT_ADDRESS',
-        ),
-        explorerUrl: 'https://goerli.basescan.org',
-      },
-      // เพิ่ม chain อื่นๆ ตามที่ต้องการรองรับ
-    };
+    // Initialize supported chains from config
+    const blockchainConfig =
+      this.configService.get<BlockchainConfigType>('blockchain');
+    this.chainConfigs = {};
+
+    // Convert from blockchain config to chain config
+    if (blockchainConfig && blockchainConfig.networks) {
+      Object.entries(blockchainConfig.networks).forEach(
+        ([networkId, network]) => {
+          this.chainConfigs[networkId] = {
+            name: network.name,
+            chainId: network.chainId,
+            rpcUrl: network.rpcUrl,
+            contractAddress: network.contractAddress,
+            explorerUrl: network.blockExplorer,
+          };
+        },
+      );
+    }
   }
 
   /**
