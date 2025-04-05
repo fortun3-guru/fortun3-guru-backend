@@ -13,6 +13,7 @@ export interface CallFortuneParams {
   consult: string;
   lang: string;
   receiptId: string;
+  chainId: string;
 }
 
 export interface FortuneResponse {
@@ -37,7 +38,7 @@ export interface ConsultResponse {
   txHash: string;
   walletAddress: string;
   raw: any;
-  networkName: string;
+  chainId: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -131,7 +132,7 @@ export class FortuneService {
         txHash: data.txHash,
         walletAddress: data.walletAddress,
         raw: data.raw,
-        networkName: data.networkName,
+        chainId: data.chainId,
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate(),
       };
@@ -220,7 +221,7 @@ export class FortuneService {
       }
 
       // 5. Mint the NFT
-      if (!consult.networkName) {
+      if (!consult.chainId) {
         throw new Error('Network name not specified in consult data');
       }
 
@@ -229,7 +230,7 @@ export class FortuneService {
       }
 
       const mintResult = await this.nftService.mintNFT(
-        consult.networkName, // Chain ID from the consult
+        consult.chainId, // Chain ID from the consult
         this.privateKey,
         consult.walletAddress, // Receiver address
         tokenId,
@@ -246,7 +247,7 @@ export class FortuneService {
         metadataUri: mintResult.metadataUri,
         createdAt: new Date(),
         walletAddress: consult.walletAddress,
-        networkName: consult.networkName,
+        chainId: consult.chainId,
       });
 
       return {

@@ -53,6 +53,12 @@ class CallFortuneDto implements CallFortuneParams {
     example: 'receipt-123456',
   })
   receiptId: string;
+
+  @ApiProperty({
+    description: 'Chain ID for the blockchain network',
+    example: 'ethereum',
+  })
+  chainId: string;
 }
 
 class FortuneResponseData {
@@ -185,7 +191,7 @@ export class FortuneController {
   async tellFortune(@Body() dto: CallFortuneDto): Promise<FortuneResponseData> {
     try {
       this.logger.log(
-        `Fortune telling requested for wallet: ${dto.walletAddress}, txHash: ${dto.txHash}`,
+        `Fortune telling requested for wallet: ${dto.walletAddress}, txHash: ${dto.txHash}, chainId: ${dto.chainId}`,
       );
 
       const fortuneResults = await this.fortuneService.callFortune({
@@ -194,6 +200,7 @@ export class FortuneController {
         consult: dto.consult,
         lang: dto.lang,
         receiptId: dto.receiptId,
+        chainId: dto.chainId,
       });
 
       return {
