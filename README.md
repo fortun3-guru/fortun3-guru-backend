@@ -1,210 +1,118 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Fortun3 Guru Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-based backend service for the Fortun3 Guru platform - a blockchain-powered fortune telling application that leverages transaction data to generate personalized fortune readings, with NFT minting capabilities.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- Fortune telling based on blockchain transaction data
+- NFT minting for fortune readings
+- Multi-chain EVM support
+- Blockchain event listening (ConsultPaid and MintingPaid events)
+- Authentication and user management
+- Integration with Worldcoin for identity verification
+- IPFS integration for NFT metadata storage
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Event Relayer สำหรับ Smart Contract
+- NestJS (Node.js framework)
+- Firebase (Functions, Firestore)
+- ethers.js v5 for blockchain interactions
+- Pinata SDK for IPFS integration
+- Swagger for API documentation
 
-ระบบนี้รวมถึง Event Relayer ที่ใช้สำหรับติดตาม event จาก smart contract โดยใช้ ethers.js v5 และบันทึกข้อมูลไปยัง Firebase Firestore
-
-### ความสามารถหลัก:
-
-- **รองรับหลาย Blockchain (Multichain)**: สามารถเชื่อมต่อและติดตาม event จากหลายเครือข่าย blockchain พร้อมกัน
-- **ติดตาม Event แบบ Real-time**: ตรวจจับ event ทันทีที่เกิดขึ้นบน blockchain
-- **ค้นหา Event ย้อนหลัง**: สามารถค้นหา event ที่เกิดขึ้นก่อนหน้าผ่าน API endpoint
-- **บันทึกข้อมูลอัตโนมัติ**: บันทึกข้อมูล event ลงใน Firestore collection โดยอัตโนมัติ
-
-ระบบนี้มี Event Listener 2 ตัว:
-
-1. **ConsultPaid Event Listener**: ตรวจจับ event `ConsultPaid` และบันทึกลงคอลเลกชัน `fortunes`
-2. **MintingPaid Event Listener**: ตรวจจับ event `MintingPaid` และบันทึกลงคอลเลกชัน `nfts`
-
-### การตั้งค่า:
-
-1. กำหนดค่า Blockchain Networks และ Contract Addresses ใน `.env.local` ไฟล์:
+## Project Structure
 
 ```
-# Ethereum Mainnet
-ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/your-infura-key
-ETHEREUM_CONTRACT_ADDRESS=0xYourContractAddress
-
-# BSC Mainnet
-BSC_RPC_URL=https://bsc-dataseed.binance.org
-BSC_CONTRACT_ADDRESS=0xYourContractAddress
-
-# Polygon Mainnet
-POLYGON_RPC_URL=https://polygon-rpc.com
-POLYGON_CONTRACT_ADDRESS=0xYourContractAddress
-
-# Sepolia Testnet
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/your-infura-key
-SEPOLIA_CONTRACT_ADDRESS=0xYourContractAddress
-
-# Base Testnet
-BASE_TESTNET_RPC_URL=https://goerli.base.org
-BASE_TESTNET_CONTRACT_ADDRESS=0xYourContractAddress
+fortun3-guru-backend/
+├── src/
+│   ├── apis/
+│   │   ├── auth/          # Authentication module
+│   │   ├── blockchain/    # Blockchain event listeners and controllers
+│   │   ├── fortune/       # Fortune telling service and API endpoints
+│   │   ├── nft/           # NFT minting and IPFS services
+│   │   ├── user/          # User management
+│   │   └── worldcoin/     # Worldcoin integration
+│   ├── config/            # Application configuration
+│   ├── decorators/        # Custom decorators
+│   ├── firebase/          # Firebase integration
+│   ├── guards/            # Auth guards
+│   ├── interceptors/      # Request/response interceptors
+│   └── utils/             # Utility functions
+├── app.module.ts          # Main application module
+└── main.ts                # Application entry point
 ```
 
-ระบบจะใช้ NestJS ConfigService เพื่อจัดการค่า configuration ที่กำหนดไว้
+## Main API Endpoints
 
-### การใช้งาน API:
+### Fortune Telling
 
-#### ค้นหา ConsultPaid Event ย้อนหลัง:
+- `POST /fortune/tell` - Generate fortune readings based on blockchain transaction data
+- `GET /fortune/consult/:id` - Retrieve a specific fortune consultation by ID
+- `POST /fortune/mint-nft` - Mint an NFT from a fortune consultation
 
-```
-POST /blockchain/query-consult-events
-Body: {
-  "fromBlock": 1000000,
-  "toBlock": "latest"
-}
-```
+### Blockchain
 
-#### ค้นหา MintingPaid Event ย้อนหลัง:
+- `POST /blockchain/query-consult-events` - Query historic ConsultPaid events
+- `POST /blockchain/query-minting-events` - Query historic MintingPaid events
 
-```
-POST /blockchain/query-minting-events
-Body: {
-  "fromBlock": 1000000,
-  "toBlock": "latest"
-}
-```
+### NFT
 
-#### ตรวจสอบข้อมูล MintingPaid โดย blockNumber หรือ txHash:
+- NFT metadata and minting management endpoints
 
-```
-GET /blockchain/check-minting?blockNumber=1000000&txHash=0x123...&walletAddress=0x456...
-```
+## Setup and Installation
 
-สามารถส่ง parameter ได้ดังนี้:
+### Prerequisites
 
-- **blockNumber**: หมายเลข block ที่ต้องการตรวจสอบ
-- **txHash**: transaction hash ที่ต้องการตรวจสอบ
-- **walletAddress**: ที่อยู่กระเป๋าเงินที่ต้องการตรวจสอบ
+- Node.js v20
+- Firebase project setup
+- Blockchain provider API keys
 
-สามารถส่งเพียง parameter ใดก็ได้ หรือส่งหลาย parameter พร้อมกันเพื่อกรองข้อมูล
+### Environment Variables
 
-ตัวอย่างผลลัพธ์:
-
-```json
-{
-  "success": true,
-  "count": 1,
-  "data": [
-    {
-      "id": "documentId",
-      "walletAddress": "0x...",
-      "receiptId": "123",
-      "used": false,
-      "blockNumber": 1000000,
-      "txHash": "0x...",
-      "network": "ethereum",
-      "chainId": 1,
-      "blockExplorer": "https://etherscan.io",
-      "createdAt": "2023-04-05T08:30:00.000Z"
-    }
-  ]
-}
-```
-
-### โครงสร้างข้อมูลใน Firestore:
-
-#### Collection: fortunes (ConsultPaid Events)
-
-```
-{
-  "walletAddress": "0x...",       // ที่อยู่กระเป๋าที่จ่ายเงิน
-  "receiptId": "123",             // ID ใบเสร็จจาก event
-  "used": false,                  // สถานะการใช้งาน
-  "blockNumber": 1000000,         // หมายเลข block ที่เกิด event
-  "txHash": "0x...",              // hash ของธุรกรรม
-  "network": "ethereum",          // ชื่อเครือข่าย blockchain
-  "chainId": 1,                   // Chain ID ของเครือข่าย
-  "blockExplorer": "https://etherscan.io", // URL ของ block explorer
-  "createdAt": Timestamp          // เวลาที่บันทึกข้อมูล
-}
-```
-
-#### Collection: nfts (MintingPaid Events)
-
-```
-{
-  "walletAddress": "0x...",       // ที่อยู่กระเป๋าที่จ่ายเงิน
-  "receiptId": "123",             // ID ใบเสร็จจาก event
-  "used": false,                  // สถานะการใช้งาน
-  "blockNumber": 1000000,         // หมายเลข block ที่เกิด event
-  "txHash": "0x...",              // hash ของธุรกรรม
-  "network": "ethereum",          // ชื่อเครือข่าย blockchain
-  "chainId": 1,                   // Chain ID ของเครือข่าย
-  "blockExplorer": "https://etherscan.io", // URL ของ block explorer
-  "createdAt": Timestamp          // เวลาที่บันทึกข้อมูล
-}
-```
-
-## Installation
+Copy the example environment file to set up your local environment:
 
 ```bash
-$ npm install
+cp .env.example .env.local
 ```
 
-## Running the app
+Edit the `.env.local` file to include your API keys and configuration values.
+
+### Installation
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Test
+### Running the Application
+
+Development mode:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run dev
 ```
 
-## Support
+Production build:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm run build
+```
 
-## Stay in touch
+### Deployment
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Deploy to Firebase Functions:
+
+```bash
+npm run deploy
+```
+
+## API Documentation
+
+Once the application is running, Swagger API documentation is available at:
+
+```
+http://localhost:3000/api
+```
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
+UNLICENSED
