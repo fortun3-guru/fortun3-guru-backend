@@ -98,6 +98,18 @@ export class NFTService {
     console.log('chainConfig', chainConfig);
     console.log('chainConfig.rpcUrl', chainConfig.rpcUrl);
     if (chainConfig.rpcUrl && chainConfig.rpcUrl.startsWith('http')) {
+      if (chainConfig.chainId == 42220) {
+        return new ethers.providers.JsonRpcProvider(
+          {
+            url: chainConfig.rpcUrl,
+            timeout: 10000,
+          },
+          {
+            chainId: 42220, // Celo Mainnet chainId
+            name: 'celo-mainnet', // Custom name
+          },
+        );
+      }
       return new ethers.providers.JsonRpcProvider(chainConfig.rpcUrl);
     } else if (chainConfig.rpcUrl && chainConfig.rpcUrl.startsWith('ws')) {
       return new ethers.providers.WebSocketProvider(chainConfig.rpcUrl);
@@ -146,9 +158,9 @@ export class NFTService {
       tokenId,
       metadata,
     );
-    if (!this.chainConfigs[chainId]) {
+    /* if (!this.chainConfigs[chainId]) {
       throw new Error(`Chain ${chainId} not supported`);
-    }
+    } */
 
     // Validate receiver address
     if (!ethers.utils.isAddress(receiverAddress)) {
